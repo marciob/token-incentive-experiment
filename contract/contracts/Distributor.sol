@@ -63,4 +63,13 @@ contract Distributor {
             );
         }
     }
+
+    function verify(
+        bytes memory proof,
+        bytes memory publicInputs
+    ) public view returns (bool) {
+        // to be implemented
+
+        return false;
+    }
 }

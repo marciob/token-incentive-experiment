@@ -2,8 +2,9 @@
 pragma solidity ^0.8.13;
 
 import "./Tara.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract Distributor {
+contract Distributor is Ownable {
     address payable[] public recipients;
 
     Tara public taraContract;
@@ -13,14 +14,16 @@ contract Distributor {
     }
 
     // adds addresses to the recipients list
-    function addAddress(address payable[] memory _addresses) public payable {
+    function addAddress(
+        address payable[] memory _addresses
+    ) public payable onlyOwner {
         for (uint i = 0; i < _addresses.length; i++) {
             recipients.push(_addresses[i]);
         }
     }
 
     // removes an address from the recipients list
-    function removeAddress(address _addressToRemove) public {
+    function removeAddress(address _addressToRemove) public onlyOwner {
         uint index = 0;
         bool found = false;
 
@@ -41,12 +44,12 @@ contract Distributor {
         }
     }
 
-    function mintAndDistribute(uint _amount) public {
+    function mintAndDistribute(uint _amount) public onlyOwner {
         // Mint the total amount of tokens required
         taraContract.mint(address(this), _amount);
 
         // Calculate the share of each recipient, including the sender
-        uint256 share = _amount / recipients.length;
+        uint256 share = _amount / (recipients.length + 1);
 
         // Distribute the shares to the recipients list
         for (uint i = 0; i < recipients.length; i++) {
@@ -59,9 +62,14 @@ contract Distributor {
             // Transfer tokens from the contract to the recipient
             require(
                 taraContract.transferFrom(address(this), recipients[i], share),
-                "Transfer failed"
+                "Transfer failed to the recipient"
             );
         }
+
+        require(
+            taraContract.transferFrom(address(this), msg.sender, share),
+            "Transfer failed to the msg.sender"
+        );
     }
 
     function verify(
